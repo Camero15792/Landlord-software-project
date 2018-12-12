@@ -68,8 +68,8 @@ def py_mail(SUBJECT, BODY, TO, FROM):
 tenants = ['Mrs. Jones', 'Jay', 'Justin', 'Ian']
 rent = [550,500,450,550]
 utilities = [1,1,1,0]
-emails = ['starkcameron@ymail.com', 'starksupply0@gmail.com', 'stark.cameron1579@gmail.com', 'sales.furassure@gmail.com']
-utility_bill = int(input('enter utility bill amount:'))
+emails = ['', '', '', '']
+utility_bill = flaot(input('enter utility bill amount:'))
 while 1:
     time.sleep(24*60*60)
     day, reminder_date, day_of_first, month, util_month = choose_date()
@@ -99,4 +99,4 @@ while 1:
             TO = emails[x]
             FROM = 'YOUR EMAIL'
             py_mail("Courtesy Reminder", email_content, TO, FROM)
-        utility_bill = int(input('enter utility bill amount:'))
+        utility_bill = float(input('enter utility bill amount:'))
