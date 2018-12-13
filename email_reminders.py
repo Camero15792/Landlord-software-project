@@ -120,7 +120,7 @@ while 1:
             continue
         if reminder_date[x] > 0:
             if reminder_date[x] == today:
-                send_email(tenants[x], emails[x], thisMonth[0], lastMonth[0], weekday(payment_date[x], thisMonth[1], thisYear)[0],
+                send_email(tenants[x], emails[x], thisMonth[0], twoMonthsAgo[0], weekday(payment_date[x], thisMonth[1], thisYear)[0],
                            rent[x], utilities[x], utility_bill)
     time.sleep(60*60*24)
 
