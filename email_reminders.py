@@ -6,37 +6,70 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-def choose_date():
+def todays_date():
     x = date.today()
     x = str(x)
-    day = x[8:]
-    day = int(day)
-    year = x[0:4]
-    year = int(year)
+    today = x[8:]
+    today = int(today)
+    this_year = x[0:4]
+    this_year = int(this_year)
     month = x[5:7]
     month = int(month)
-    NA, days_in_month = calendar.monthrange(year, month)
-    month = month + 1
-    if month == 13:
-        month = 1
-        year = year + 1
-    day_of_first, NA = calendar.monthrange(year, month)
-    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    for X in range(0,6):
-        if day_of_first == X:
-            day_of_first = weekdays[X]
-    reminder_date = days_in_month - 7
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    for X in range(0,11):
-        if month == X + 1:
-            month = months[X]
-            if X == 0:
-                util_month = 'November'
-            elif X == 1:
-                util_month = 'December'
-            else:
-                util_month = months[X - 2]
-    return day, reminder_date, day_of_first, month, util_month
+    this_month = [months[month-1],month]
+    if month == 1:
+        last_month = ['December',12]
+    else:
+        last_month = [months[month-2],month-1]
+    if month == 1:
+        two_months_ago = ['November',11]
+    elif month == 2:
+        two_months_ago = ['December',12]
+    else:
+        two_months_ago = [months[month-3],month-2]
+    if month == 12:
+        next_month = ['January',1]
+    else:
+        next_month = [months[month],month+1]
+    NA, days_in_month = calendar.monthrange(this_year,month)
+
+    return two_months_ago, last_month, this_month, next_month, today, this_year, days_in_month
+
+def weekday(day, month, year):
+    day_of_first, days_in_month = calendar.monthrange(year,month)
+    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    day = day_of_first + day-1
+    while 1:
+        if day>6:
+            day = day-7
+        else:
+            break
+    Day = weekdays[day]
+    return Day, days_in_month
+
+def send_email(name, email_address, due_month, util_month, due_day, rent, utilities, utility_bill):
+    if utilities == 1:
+        utilities = utility_bill/5
+    else:
+        utilities = 0
+    total = rent + utilities
+    name,rent,utilities,total = str(name), '${:,.2f}'.format(rent), '${:,.2f}'.format(utilities),'${:,.2f}'.format(total)
+    email_content = """
+                      <head>
+                        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+                      </head>
+                      <body>
+                        Hello {name},<br>&nbsp;&nbsp;&nbsp;&nbsp; This is a courtesy reminder that rent for {month} and Utilities
+                         for {util_month} are due on {due_day},
+                         please pay the following amounts to email address: YOUR_EMAIL
+                         Rent: {Rent} + Utilities: {Utilities} = total: {total}
+                          <u><a href="https://pay.google.com/payments/u/0/home#sendRequestMoney"> Click to Pay with Google </a></u>
+                      </body>
+                      """.format(name=name, month=due_month, due_day=due_day, util_month=util_month, Rent=rent,
+                                 Utilities=utilities, total=total)
+    TO = email_address
+    FROM = 'YOUR_EMAIL'
+    py_mail("Courtesy Reminder", email_content, TO, FROM)
 
 
 def py_mail(SUBJECT, BODY, TO, FROM):
@@ -58,45 +91,36 @@ def py_mail(SUBJECT, BODY, TO, FROM):
     # The actual sending of the e-mail
     server = smtplib.SMTP('smtp.gmail.com:587')
     # Credentials (if needed) for sending the mail
-    password = "YOUR PASSWORD"
+    password = "Your_Password"
     server.starttls()
     server.login(FROM, password)
     server.sendmail(FROM, [TO], MESSAGE.as_string())
     server.quit()
 
-
-tenants = ['Mrs. Jones', 'Jay', 'Justin', 'Ian']
+tenants = ['John', 'Jim', 'Joe', 'Bob']
+payment_date = [1,3,1,8]
+reminder_date=[]
+for x in payment_date: reminder_date.append(x-3)
 rent = [550,500,450,550]
 utilities = [1,1,1,0]
-emails = ['', '', '', '']
-utility_bill = flaot(input('enter utility bill amount:'))
+emails = ['tenant@example.com', 'tenant@example.com', 'tenant@example.com', 'tenant@example.com']
+utility_bill = float(input('Enter Utility Bill:'))
+
 while 1:
-    time.sleep(24*60*60)
-    day, reminder_date, day_of_first, month, util_month = choose_date()
-    if day == reminder_date:
-        for x in range(0,4):
-            name = str(tenants[x])
-            if utilities[x] == 1:
-                Utilities = utility_bill/5
-            else:
-                Utilities = 0
-            total = Utilities + rent[x]
-            Utilities = str(Utilities)
-            Rent = str(rent[x])
-            total = str(total)
-            email_content = """
-                   <head>
-                     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-                   </head>
-                   <body>
-                     Hello {name},<br>&nbsp;&nbsp;&nbsp;&nbsp; This is a courtesy reminder that rent for {month} and Utilities
-                      for {util_month} is due next {day_of_first}, 
-                      please pay the following amounts to email address: stark.cameron1579@gmail.com,
-                      Rent: {Rent} + Utilities: {Utilities} = total: {total}
-                       <u><a href="https://pay.google.com/payments/u/0/home#sendRequestMoney"> Click to Pay </a></u>
-                   </body>
-                   """.format(name=name, month=month, day_of_first=day_of_first, util_month=util_month, Rent=Rent, Utilities=Utilities, total=total)
-            TO = emails[x]
-            FROM = 'YOUR EMAIL'
-            py_mail("Courtesy Reminder", email_content, TO, FROM)
-        utility_bill = float(input('enter utility bill amount:'))
+    twoMonthsAgo, lastMonth, thisMonth, nextMonth, today, thisYear, days_in_month = todays_date()
+    for x in range(0,len(tenants)):
+        if reminder_date[x] < 1:
+            reminder_date[x] = days_in_month + reminder_date[x]
+            if reminder_date[x] == today:
+                if thisMonth[0] == 'December':
+                    send_email(tenants[x],emails[x],nextMonth[0],lastMonth[0],weekday(payment_date[x], nextMonth[1], thisYear+1)[0],rent[x],utilities[x],utility_bill)
+                else:
+                    send_email(tenants[x], emails[x], nextMonth[0], lastMonth[0],
+                               weekday(payment_date[x], nextMonth[1], thisYear)[0], rent[x], utilities[x], utility_bill)
+            continue
+        if reminder_date[x] > 0:
+            if reminder_date[x] == today:
+                send_email(tenants[x], emails[x], thisMonth[0], lastMonth[0], weekday(payment_date[x], thisMonth[1], thisYear)[0],
+                           rent[x], utilities[x], utility_bill)
+    time.sleep(60*60*24)
+
