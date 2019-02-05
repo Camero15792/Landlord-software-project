@@ -1,11 +1,11 @@
 from pathlib import Path
-import os, re
-
+import re, os
 import PyPDF2
 
 ADDRESS_REGEX = 'Details of your utility service at:(.*)Account'
 AMOUNT_DUE_REGEX = 'Amount Due: (.*)Page 2'
-BILL_DATE_REGEX = 'Billing Date: (.*)Amount Due:'
+BILL_DATE_REGEX = '\$15\$25\$5\$50\$75\$184.73\s[*CR]$(\d|\.|\,)\$81'
+
 
 
 class PDF:
@@ -33,7 +33,11 @@ class PDF:
         return re_obj[1].strip().lower()
 
 
-script_location = os.path.dirname(os.path.realpath(__file__))
+if __name__ == "__main__":
+    script_location = os.path.dirname(os.path.realpath(__file__))
 
-pdf_obj = PDF(str(Path(script_location, 'TestBill.pdf')))
-print(pdf_obj.find_address())
+    pdf_obj = PDF(str(Path(script_location, 'TestBill.pdf')))
+
+    print(pdf_obj.find_address())
+    print(pdf_obj.find_bill_date())
+    print(pdf_obj.find_amount_due())
