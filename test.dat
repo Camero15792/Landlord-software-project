@@ -1,0 +1,26 @@
+[
+    {
+        "lease_start_date": "02/11/19",
+        "lease_end_date": "02/11/19",
+        "rent_per_month": 400,
+        "rent_prorated": 207,
+        "first_name": "John",
+        "last_name": "Doe",
+        "utility_share_portion": 0.3,
+        "tenant_address": "123 easy street, colorado springs, CO 80923",
+        "tenant_unit": "A",
+        "tenant_id": 1549674307163
+    },
+    {
+        "lease_start_date": "02/11/19",
+        "lease_end_date": "02/11/19",
+        "rent_per_month": 400,
+        "rent_prorated": 207,
+        "first_name": "John",
+        "last_name": "Doe",
+        "utility_share_portion": 0.3,
+        "tenant_address": "123 easy street, colorado springs, CO 80923",
+        "tenant_unit": "A",
+        "tenant_id": 1549674307163
+    }
+]
