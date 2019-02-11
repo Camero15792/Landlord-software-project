@@ -39,7 +39,7 @@ def obj_decode(chain_dict):
     for key, value in chain_dict.items():
         try:
             chain_dict[key] = datetime.datetime.strptime(value, '%x')
-        except Exception as Msg:
+        except Exception:
             pass
 
     return chain_dict
