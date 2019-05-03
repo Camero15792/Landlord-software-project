@@ -6,6 +6,7 @@ import calendar
 import datetime
 import time
 from email import encoders
+import math
 
 Gmail_Account = ''
 Password = ''
@@ -17,7 +18,7 @@ def send_reminder_email(name, email_address, rent, due_date, utility_bill, numbe
     if util_portion == 0:
         utilities = 0
     else:
-        utilities = utility_bill/number_tenants
+        utilities = math.ceil(utility_bill/number_tenants)
     total = rent + utilities
     name,rent,utilities,total = str(name), '${:,.2f}'.format(rent),'${:,.2f}'.format(utilities),'${:,.2f}'.format(total)
     due_month = due_date.strftime('%B')
