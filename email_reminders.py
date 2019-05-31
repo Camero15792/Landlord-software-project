@@ -2,7 +2,8 @@ import communications
 import time, datetime, math
 from calendar import monthrange
 import calendar
-import xlrd
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from pathlib import Path
 import re, os
 import warnings
@@ -12,22 +13,12 @@ import imaplib
 import email
 
 
-
-
-BillFolder = "C:/Users/Cameron Stark/Documents/"
-GmailAccount = ""
-Password = ""
-ExcelPath = "C:/Users/Cameron Stark/Documents/Tenant_data.xlsx"
-
-
-
-
 class PDFReader:
     """
     Scans through the utility bill and finds key information
     """
     def __init__(self):
-        file_obj = open(BillFolder+'ViewBill.pdf', 'rb')
+        file_obj = open("C:\\Users\\Cameron Stark\\Documents\\BillView.pdf", 'rb')
         self.pdf_obj = PyPDF2.PdfFileReader(file_obj)
 
     def find_total(self):
@@ -37,7 +28,7 @@ class PDFReader:
 
     def find_util_month(self):
         extracted_text = self.pdf_obj.getPage(0).extractText()
-        date = extracted_text[extracted_text.find('Billing Date:') + 13:extracted_text.find('No Payment Due')]
+        date = extracted_text[extracted_text.find('Billing Date:') + 13:extracted_text.find('Billing Date:') + 21]
         date = datetime.datetime.strptime(date, '%x')
         if date.month == 1:
             date = date.replace(date.year-1,12)
@@ -84,11 +75,11 @@ def reminder_dates_generator(lsd,lsm,lsy,lem,ley, pay_day, remind_days_in_advanc
 
 def gather_pdf():
     """
-    Searches email inbox for and downloads utility bill. If I had access to a Colorado Springs Utilities Account this function
-    would instead grab the bill from the CSU website.
+    Searches email inbox for and downloads utility bill. If I had a Colorado Springs Utilities Account this function
+    would grab the bill from the CSU website.
     """
     mail = imaplib.IMAP4_SSL('imap.gmail.com',993)
-    mail.login(GmailAccount, Password)
+    mail.login('starksupply0@gmail.com', 'business1579')
     mail.select('Inbox')
     type, data = mail.search(None,'(UNSEEN)', '(HEADER Subject "UTILITY_BILL")')
     for num in data[0].split():
@@ -103,9 +94,11 @@ def gather_pdf():
                 continue
             fileName = part.get_filename()
             if bool(fileName):
-                if os.path.exists(BillFolder+'ViewBill.pdf'):
-                    os.remove(BillFolder+'ViewBill.pdf')
-                filePath = os.path.join(BillFolder, fileName)
+                if os.path.exists('C:/Users/Cameron Stark/Documents/ViewBill.pdf'):
+                    os.remove('C:/Users/Cameron Stark/Documents/ViewBill.pdf')
+                if os.path.exists('C:/Users/Cameron Stark/Documents/BillView.pdf'):
+                    os.remove('C:/Users/Cameron Stark/Documents/BillView.pdf')
+                filePath = os.path.join('C:/Users/Cameron Stark/Documents/', fileName)
                 if not os.path.isfile(filePath):
                     fp = open(filePath, 'wb')
                     fp.write(part.get_payload(decode=True))
@@ -115,59 +108,60 @@ def gather_pdf():
 
 
 def import_tenant_data():
-    """
-    Gets all tenant data from an excel spreadsheet saved in my computer
-    :return:
-    """
-    wkbk = xlrd.open_workbook(ExcelPath)
-    sheet = wkbk.sheet_by_index(0)
-    Firstnames = []
-    Lastnames = []
-    Rents = []
-    Utilities = []
-    Pay_dates = []
-    Emails = []
-    Start_days = []
-    Start_months = []
-    Start_years = []
-    End_months = []
-    End_years = []
-    x = 1
-    while 1:
-        try:
-            Firstnames.append(sheet.cell(x, 0).value)
-            Lastnames.append(sheet.cell(x, 1).value)
-            Rents.append(sheet.cell(x, 2).value)
-            Utilities.append(sheet.cell(x, 3).value)
-            Pay_dates.append(int(sheet.cell(x, 4).value))
-            Emails.append(sheet.cell(x, 5).value)
-            Start_days.append(int(sheet.cell(x, 6).value))
-            Start_months.append(int(sheet.cell(x, 7).value))
-            Start_years.append(int(sheet.cell(x, 8).value))
-            End_months.append(int(sheet.cell(x, 9).value))
-            End_years.append(int(sheet.cell(x, 10).value))
-            x += 1
-        except IndexError:
-            break
-    return Firstnames, Lastnames, Rents, Utilities, Pay_dates, Emails, Start_days, Start_months, Start_years, End_months, End_years
+    def int_list(list):
+        new_list = []
+        for x in list:
+            new_list.append(int(x))
+        return new_list
 
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        '', scope)
+    gc = gspread.authorize(credentials)
+    wks = gc.open('Tenant_Data').sheet1
+
+    firstnames = wks.col_values(1)[1:]
+    lastnames = wks.col_values(2)[1:]
+    rents = int_list(wks.col_values(3)[1:])
+    utilities = int_list(wks.col_values(4)[1:])
+    pay_dates = int_list(wks.col_values(5)[1:])
+    emails = wks.col_values(6)[1:]
+    phone_numbers = wks.col_values(7)[1:]
+    start_days = int_list(wks.col_values(8)[1:])
+    start_months = int_list(wks.col_values(9)[1:])
+    start_years = int_list(wks.col_values(10)[1:])
+    end_months = int_list(wks.col_values(11)[1:])
+    end_years = int_list(wks.col_values(12)[1:])
+    return firstnames,lastnames,rents,utilities,pay_dates,emails,phone_numbers,start_days,start_months,start_years,end_months,end_years
 
 gather_pdf()
 
 pdf = PDFReader()
-utility_bill = pdf.find_total()
-utility_month, utility_date = pdf.find_util_month()
+try:
+    utility_month, utility_date = pdf.find_util_month()
+    utility_bill = pdf.find_total()
+except:
+    utility_month = input('Enter Utility Month')
+    utility_date = datetime.datetime.strptime(input('Enter Utility Date Format: month/day/yr'),'%x')
+    utility_bill = float(input('Enter Utility Bill Format: float'))
 
-Firstnames, Lastnames, Rents, Utilities, Pay_dates, Emails, Start_days, Start_months, Start_years, End_months, End_years = import_tenant_data()
 
-for y in range(0,len(Firstnames)):
-    reminder_dates = reminder_dates_generator(Start_days[y],Start_months[y],Start_years[y],End_months[y],End_years[y],Pay_dates[y])[0]
-    payment_dates = reminder_dates_generator(Start_days[y],Start_months[y],Start_years[y],End_months[y],End_years[y],Pay_dates[y])[1]
-    if payment_dates[0] > utility_date:
-        Utilities[y] = 0
-    today = datetime.datetime.today()
-    today = today.replace(today.year,today.month,today.day,0,0,0,0)
-    for x in range(0,len(reminder_dates)):
-        if today == reminder_dates[x]:
-            communications.send_reminder_email(Firstnames[y],Emails[y],Rents[y],payment_dates[x],utility_bill,len(Firstnames),utility_month,Utilities[y])
-            print('hello '+Firstnames[y]+' at '+ Emails[y])
+Firstnames, Lastnames, Rents, Utilities, Pay_dates, Emails, Phone_Numbers, Start_days, Start_months, Start_years, End_months, End_years = import_tenant_data()
+
+while 1:
+    for y in range(0,len(Firstnames)):
+        reminder_dates = reminder_dates_generator(Start_days[y],Start_months[y],Start_years[y],End_months[y],End_years[y],Pay_dates[y])[0]
+        payment_dates = reminder_dates_generator(Start_days[y],Start_months[y],Start_years[y],End_months[y],End_years[y],Pay_dates[y])[1]
+        if payment_dates[0] > utility_date:
+            Utilities[y] = 0
+        today = datetime.datetime.today()
+        today = today.replace(today.year,today.month,today.day,0,0,0,0)
+        for x in range(0,len(reminder_dates)):
+            if today == reminder_dates[x]:
+                if reminder_dates[x] == reminder_dates[-1]:
+                    Last_Month = True
+                else:
+                    Last_Month = False
+                communications.send_reminder_email(Firstnames[y],Emails[y],Rents[y],payment_dates[x],utility_bill,len(Firstnames),utility_month,Utilities[y],Last_Month)
+                print('hello '+Firstnames[y]+' at '+ Emails[y])
+    time.sleep(60*60*24)
